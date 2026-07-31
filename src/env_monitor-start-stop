@@ -1,0 +1,20 @@
+#!/bin/sh
+
+APP="/usr/bin/env_monitor"
+
+case "$1" in
+	start)
+		echo "Starting env_monitor application as daemon"
+		"$APP"
+	    ;;
+	stop)
+        echo "env_monitor is not a long-running process"
+	    ;;
+	*)
+		echo "Usage: $0 {start|stop}"
+	    exit 1
+        ;;
+esac
+
+exit 0
+
