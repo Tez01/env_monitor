@@ -7,7 +7,7 @@ LDFLAGS ?=
 
 override CFLAGS += 
 
-TARGET = env_monitor
+TARGET = bin/env_monitor
 SRC = src/drivers/d_uart.c
 
 all: $(TARGET)

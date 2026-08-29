@@ -1,2 +1,12 @@
+# Compiled application binary
+env_monitor
 
-src/env_monitor
+# Object files
+*.o
+
+# Dependency files
+*.d
+
+# Debugger / editor junk
+*.swp
+*~
