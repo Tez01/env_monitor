@@ -5,14 +5,16 @@ CC ?= $(CROSS_COMPILE)gcc
 CFLAGS ?= -g -O0 -Wall -Wextra -Wconversion -Wsign-conversion -Werror -pthread
 LDFLAGS ?=
 
-TARGET = env_monitor
-
 override CFLAGS += 
+
+TARGET = env_monitor
+SRC = src/drivers/d_uart.c
 
 all: $(TARGET)
 
-$(TARGET): env_monitor.c
-	$(CC) $(CFLAGS) $(LDFLAGS) ./env_monitor.c -o $(TARGET)
+$(TARGET): $(SRC)
+	$(CC) $(CFLAGS) $(LDFLAGS) $(SRC) -o $(TARGET)
+
 clean:
 	rm -f $(TARGET) ./*.o
 
