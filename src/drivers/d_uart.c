@@ -47,6 +47,7 @@ static const char uart_device_path_pc[] =
     "usb-STMicroelectronics_STM32_STLink_0671FF485157808667075619-if02";
   
 static const char *uart_device_path = NULL;
+
 /******************************************************************************
 * Static Global Variables
 *******************************************************************************/

@@ -4,8 +4,7 @@ APP="/usr/bin/env_monitor"
 
 case "$1" in
 	start)
-		echo "Starting env_monitor application"
-		"$APP" pi
+		echo "Doing nothing for env_monitor, as it is not a long-running process"
 	    ;;
 	stop)
         echo "env_monitor is not a long-running process"
