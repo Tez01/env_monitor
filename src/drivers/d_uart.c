@@ -39,10 +39,14 @@
 /******************************************************************************
 * Static Constants
 *******************************************************************************/
-static const char uart_device_path[] =
+static const char uart_device_path_pi[] =
+    "/dev/ttyACM0";
+
+static const char uart_device_path_pc[] =
     "/dev/serial/by-id/"
     "usb-STMicroelectronics_STM32_STLink_0671FF485157808667075619-if02";
-
+  
+const char *uart_device_path = NULL;static 
 /******************************************************************************
 * Static Global Variables
 *******************************************************************************/
@@ -70,7 +74,29 @@ static void print_bme_data(int32_t temperature_centi_deg,
 
 
 
-int main(void){
+int main(int argc, char *argv[]){
+    // Select device node based on platform
+    if (argc != 2)
+    {
+        fprintf(stderr, "Usage: %s <pi|pc>\n", argv[0]);
+        goto ERROR;
+    }
+
+    if (strcmp(argv[1], "pi") == 0)
+    {
+        uart_device_path = uart_device_path_pi;
+    }
+    else if (strcmp(argv[1], "pc") == 0)
+    {
+        uart_device_path = uart_device_path_pc;
+    }
+    else
+    {
+        fprintf(stderr, "Invalid platform: %s\n", argv[1]);
+        fprintf(stderr, "Usage: %s <pi|pc>\n", argv[0]);
+        goto ERROR;
+    }
+
     char fuser_cmd[512];
 
     snprintf(fuser_cmd,
