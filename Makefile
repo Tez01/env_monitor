@@ -13,10 +13,12 @@ SRC = src/drivers/d_uart.c
 all: $(TARGET)
 
 $(TARGET): $(SRC)
+	mkdir -p $(dir $(TARGET))
 	$(CC) $(CFLAGS) $(LDFLAGS) $(SRC) -o $(TARGET)
-
+	
 clean:
-	rm -f $(TARGET) ./*.o
+	rm -rf bin
+	rm -f ./*.o
 
 
 
