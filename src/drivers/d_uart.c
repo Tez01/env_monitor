@@ -22,6 +22,7 @@
 #include <stdlib.h>
 #include <sys/ioctl.h>
 #include <sys/wait.h>
+#include <curl/curl.h>
 /******************************************************************************
 * Application Constants
 *******************************************************************************/
@@ -69,6 +70,7 @@ static void print_bme_data(int32_t temperature_centi_deg,
                            uint32_t pressure_pa,
                            uint32_t humidity_milli_pct);
 
+                           
 /******************************************************************************
 * Function Definitions
 *******************************************************************************/
