@@ -1,0 +1,21 @@
+Transmitted bytes: 3
+Temperature: 25.75 °C | Humidity: 98.39 % | Pressure: 610.72 hPa
+
+Transmitted bytes: 3
+Temperature: 25.75 °C | Humidity: 98.39 % | Pressure: 610.61 hPa
+
+Transmitted bytes: 3
+Temperature: 25.76 °C | Humidity: 98.39 % | Pressure: 610.62 hPa
+
+Transmitted bytes: 3
+Temperature: 25.76 °C | Humidity: 98.40 % | Pressure: 610.51 hPa
+
+Transmitted bytes: 3
+Temperature: 25.75 °C | Humidity: 98.39 % | Pressure: 610.61 hPa
+
+Transmitted bytes: 3
+Temperature: 25.76 °C | Humidity: 98.40 % | Pressure: 610.51 hPa
+
+Transmitted bytes: 3
+Temperature: 25.76 °C | Humidity: 98.39 % | Pressure: 610.30 hPa
+

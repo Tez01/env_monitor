@@ -23,6 +23,9 @@
 #include <sys/ioctl.h>
 #include <sys/wait.h>
 #include <curl/curl.h>
+
+#include "f_bme_cpp.h"
+
 /******************************************************************************
 * Application Constants
 *******************************************************************************/
@@ -47,7 +50,9 @@ static const char uart_device_path_pc[] =
     "/dev/serial/by-id/"
     "usb-STMicroelectronics_STM32_STLink_0671FF485157808667075619-if02";
   
-static const char *uart_device_path = NULL;
+constexpr std::string_view uart_device_path_pi{"/dev/ttyACM0"};
+constexpr std::string_view uart_device_path_pc{    "/dev/serial/by-id/"
+    "usb-STMicroelectronics_STM32_STLink_0671FF485157808667075619-if02";};
 
 /******************************************************************************
 * Static Global Variables
@@ -66,38 +71,39 @@ static struct termios tty_settings;
 static void print_error(char *error_msg, int error_number);
 static void print_debug(char *debug_msg);
 
-static void print_bme_data(int32_t temperature_centi_deg,
-                           uint32_t pressure_pa,
-                           uint32_t humidity_milli_pct);
-
                            
 /******************************************************************************
 * Function Definitions
 *******************************************************************************/
-
-
+void print_usage(const char* program_name)
+{
+    std::cerr << "Usage: " << program_name << " <pi|pc>\n";
+}
 
 int main(int argc, char *argv[]){
     // Select device node based on platform
     if (argc != 2)
     {
-        fprintf(stderr, "Usage: %s <pi|pc>\n", argv[0]);
-        goto ERROR;
+        print_usage(argv[0]);
+        return EXIT_FAILURE;
     }
+    
+    std::string_view platform{argv[1]}; 
+    std::string_view uart_device_path{};
 
-    if (strcmp(argv[1], "pi") == 0)
+    if (platform == "pi")
     {
         uart_device_path = uart_device_path_pi;
     }
-    else if (strcmp(argv[1], "pc") == 0)
+    else if (platform== "pc")
     {
         uart_device_path = uart_device_path_pc;
     }
     else
     {
-        fprintf(stderr, "Invalid platform: %s\n", argv[1]);
-        fprintf(stderr, "Usage: %s <pi|pc>\n", argv[0]);
-        goto ERROR;
+        cerr << "Invalid platform: " << argv[1] << '\n';
+        print_usage(argv[0]);
+        return EXIT_FAILURE;
     }
 
     char fuser_cmd[512];
@@ -205,7 +211,6 @@ int main(int argc, char *argv[]){
         goto ERROR;
     }
 
-
     
     while(1){
 
@@ -288,7 +293,11 @@ int main(int argc, char *argv[]){
             ((uint32_t)rx_buffer[10] << 8U)  |
             ((uint32_t)rx_buffer[11]);
 
-        print_bme_data(temperature_centi_deg, pressure_pa, humidity_milli_pct);
+            
+
+        f_bme_cpp_process_data(temperature_centi_deg,
+                                pressure_pa, 
+                                humidity_milli_pct);
 
         sleep(1);
     }
@@ -307,30 +316,12 @@ static void print_error(char *error_msg, int error_number){
 }
 
 
-static void print_debug(char *debug_msg){
+static void print_debug(std::string_view debug_msg){
 
-    // syslog(LOG_ERR, error_msg, strerror(error_number));
+    std::cerr << "DEBUG: " << debug_msg << '\n';
+
     fprintf(stderr, "DEBUG: %s\n", debug_msg);
 
 }
 
 
-static void print_bme_data(int32_t temperature_centi_deg,
-                           uint32_t pressure_pa,
-                           uint32_t humidity_milli_pct)
-{
-    printf("\n");
-    printf("BME280 Data\n");
-    printf("-----------------------------\n");
-
-    printf("Temperature : %.2f C\n",
-           (double)temperature_centi_deg / 100.0);
-
-    printf("Pressure    : %u Pa\n",
-           pressure_pa);
-
-    printf("Humidity    : %.3f %%\n",
-           (double)humidity_milli_pct / 1000.0);
-
-    printf("-----------------------------\n");
-}
