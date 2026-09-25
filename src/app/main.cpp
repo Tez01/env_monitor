@@ -9,9 +9,11 @@
 
 #include <termios.h>
 
-#include "u_syslog.hpp"
 #include "f_transport.hpp"
 #include "f_serial_port.hpp"
+#include "f_ez.hpp"
+
+#include "u_syslog.hpp"
 
 static constexpr std::string_view uart_device_path_pi{
     "/dev/ttyACM0"
@@ -21,6 +23,8 @@ static constexpr std::string_view uart_device_path_pc{
     "/dev/serial/by-id/"
     "usb-STMicroelectronics_STM32_STLink_0671FF485157808667075619-if02"
 };
+
+static void ez_message_processor(const EzMessage &message);
 
 static void print_usage(const char* program_name)
 {
@@ -77,73 +81,10 @@ int main(int argc, char* argv[])
 
             sys_logger.debug("SerialPort created successfully");
 
-
-            while (true)
-            {
-                // Send GET_BME_DATA cmd
-                auto tx_buffer = std::to_array<std::uint8_t>({
-                    0xAA,   // BOF
-                    0x01,   // DEV_ID
-                    0x30, // CMD_NUMBER
-                });
-
-                const std::size_t bytes_written{
-                    transport->write(tx_buffer, 3)
-                };
-                std::cout << "Transmitted bytes: " << bytes_written << '\n';
-
-                std::array<std::uint8_t, 20> rx_buffer{};
-                const std::size_t bytes_read{
-                    transport->read(rx_buffer, 12)
-                };
-
-                if (bytes_read == 12)
-                {
-
-                    const std::int32_t temperature_centi_deg{
-                        static_cast<std::int32_t>(
-                            (static_cast<std::uint32_t>(rx_buffer[0]) << 24U) |
-                            (static_cast<std::uint32_t>(rx_buffer[1]) << 16U) |
-                            (static_cast<std::uint32_t>(rx_buffer[2]) << 8U)  |
-                            static_cast<std::uint32_t>(rx_buffer[3]))
-                    };
-
-                    const std::uint32_t pressure_pa{
-                        (static_cast<std::uint32_t>(rx_buffer[4]) << 24U) |
-                        (static_cast<std::uint32_t>(rx_buffer[5]) << 16U) |
-                        (static_cast<std::uint32_t>(rx_buffer[6]) << 8U)  |
-                        static_cast<std::uint32_t>(rx_buffer[7])
-                    };
-
-                    const std::uint32_t humidity_milli_pct{
-                        (static_cast<std::uint32_t>(rx_buffer[8]) << 24U) |
-                        (static_cast<std::uint32_t>(rx_buffer[9]) << 16U) |
-                        (static_cast<std::uint32_t>(rx_buffer[10]) << 8U) |
-                        static_cast<std::uint32_t>(rx_buffer[11])
-                    };
-
-                    const double temperature_c{
-                        static_cast<double>(temperature_centi_deg) / 100.0
-                    };
-
-                    const double pressure_hpa{
-                        static_cast<double>(pressure_pa) / 100.0
-                    };
-
-                    const double humidity_pct{
-                        static_cast<double>(humidity_milli_pct) / 1000.0
-                    };
+            // Create Ez Protocol thread
 
 
-                    std::cout << std::fixed << std::setprecision(2)
-                            << "Temperature: " << temperature_c << " °C"
-                            << " | Humidity: " << humidity_pct << " %"
-                            << " | Pressure: " << pressure_hpa << " hPa"
-                            << "\n\n" << std::flush;
-                }
 
-                std::this_thread::sleep_for(std::chrono::seconds{1});
-            }
 
         }
         else
@@ -154,21 +95,31 @@ int main(int argc, char* argv[])
             return EXIT_FAILURE;
         }
 
-        // /*
-        //  * Everything below this point is transport independent.
-        //  */
-        // EzProtocol ez_protocol{*transport};
+
+        EzProtocol ez_protocol{sys_logger,
+                            *transport,
+                            ez_message_processor};
+
+        
+        EzMessage ez_message{
+            .command_num_ = 1,
+            .payload_ = {},
+            .payload_len_ = 0
+        };
+
+
+        ez_protocol.send(ez_message);
 
         // PeriodicPoll periodic_poll{
         //     std::chrono::milliseconds{500},
         //     ez_protocol
         // };
 
-        // // run process forever
-        // while (true)
-        // {
-        //     std::this_thread::sleep_for(std::chrono::seconds{1});
-        // }
+        // run process forever
+        while (true)
+        {
+            std::this_thread::sleep_for(std::chrono::seconds{1});
+        }
 
     }
     catch (const std::exception& e)
@@ -184,4 +135,10 @@ int main(int argc, char* argv[])
 
 
     return EXIT_SUCCESS;
+}
+
+static void ez_message_processor(const EzMessage &message){
+    std::cerr   << "Message processed: " 
+                << message.command_num_ 
+                << '\n';
 }

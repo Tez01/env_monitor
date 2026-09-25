@@ -3,7 +3,7 @@
 CC  ?= $(CROSS_COMPILE)gcc
 CXX ?= $(CROSS_COMPILE)g++
 
-HEADER_PATHS = -Isrc/drivers -Isrc/middleware -Isrc/utility
+HEADER_PATHS = -Isrc/app -Isrc/drivers -Isrc/middleware -Isrc/utility
 
 CFLAGS   ?= -g -O0 -Wall -Wextra -Wconversion -Wsign-conversion -Werror -pthread $(HEADER_PATHS)
 CXXFLAGS ?= -std=c++23 -g -O0 -Wall -Wextra -Wconversion -Wsign-conversion -Werror -pthread $(HEADER_PATHS)
