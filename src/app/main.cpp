@@ -99,26 +99,42 @@ int main(int argc, char* argv[])
         EzProtocol ez_protocol{sys_logger,
                             *transport,
                             ez_message_processor};
-
         
-        EzMessage ez_message{
-            .command_num_ = 1,
-            .payload_ = {},
-            .payload_len_ = 0
+        EzMessage ez_message;
+
+        constexpr auto data = std::to_array<std::uint8_t>({
+            0xAA,   // BOF
+            0x01,   // DEV_ID
+            0x30, // CMD_NUMBER
+        });
+        
+        
+        std::copy(data.begin(),
+          data.end(),
+          ez_message.payload_.begin());
+
+        ez_message.payload_len_ = data.size();
+        
+        std::jthread poll_thread{
+            [&ez_protocol, &ez_message]
+            {
+                while (true)
+                {
+                    ez_protocol.send(ez_message);
+
+                    std::this_thread::sleep_for(
+                        std::chrono::seconds{1}
+                    );
+                }
+            }
         };
-
-
-        ez_protocol.send(ez_message);
-
-        // PeriodicPoll periodic_poll{
-        //     std::chrono::milliseconds{500},
-        //     ez_protocol
-        // };
 
         // run process forever
         while (true)
         {
-            std::this_thread::sleep_for(std::chrono::seconds{1});
+            EzMessage message = ez_protocol.receive();   // blocking
+
+            ez_message_processor(message);
         }
 
     }
@@ -137,8 +153,36 @@ int main(int argc, char* argv[])
     return EXIT_SUCCESS;
 }
 
-static void ez_message_processor(const EzMessage &message){
-    std::cerr   << "Message processed: " 
-                << message.command_num_ 
-                << '\n';
+static void ez_message_processor(const EzMessage &message)
+{
+    const std::int32_t temperature_centi_deg{
+        static_cast<std::int32_t>(
+            (static_cast<std::uint32_t>(message.payload_[0]) << 24U) |
+            (static_cast<std::uint32_t>(message.payload_[1]) << 16U) |
+            (static_cast<std::uint32_t>(message.payload_[2]) << 8U)  |
+             static_cast<std::uint32_t>(message.payload_[3])
+        )
+    };
+
+    const std::uint32_t pressure_pa{
+        (static_cast<std::uint32_t>(message.payload_[4]) << 24U) |
+        (static_cast<std::uint32_t>(message.payload_[5]) << 16U) |
+        (static_cast<std::uint32_t>(message.payload_[6]) << 8U)  |
+         static_cast<std::uint32_t>(message.payload_[7])
+    };
+
+    const std::uint32_t humidity_milli_pct{
+        (static_cast<std::uint32_t>(message.payload_[8])  << 24U) |
+        (static_cast<std::uint32_t>(message.payload_[9])  << 16U) |
+        (static_cast<std::uint32_t>(message.payload_[10]) << 8U)  |
+         static_cast<std::uint32_t>(message.payload_[11])
+    };
+
+    std::cerr << "Temperature: "
+              << temperature_centi_deg / 100.0
+              << " C | Pressure: "
+              << pressure_pa / 100.0
+              << " hPa | Humidity: "
+              << humidity_milli_pct / 1000.0
+              << " %\n";
 }

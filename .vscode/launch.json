@@ -2,14 +2,36 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "Debug mold_detector",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/bin/mold_detector",
+      "args": [
+        "--serial",
+        "pc"
+      ],
+      "cwd": "${workspaceFolder}",
+      "stopAtEntry": false,
+      "externalConsole": false,
+      "MIMode": "gdb",
+      "miDebuggerPath": "gdb",
+      "setupCommands": [
+        {
+          "description": "Enable pretty-printing for gdb",
+          "text": "-enable-pretty-printing",
+          "ignoreFailures": true
+        }
+      ]
+    },
+    {
       "name": "C/C++ Runner: Debug Session",
       "type": "cppdbg",
       "request": "launch",
       "args": [],
       "stopAtEntry": false,
       "externalConsole": false,
-      "cwd": "/home/tej/Documents/learning/linux_coursera/env_monitor/src/drivers",
-      "program": "/home/tej/Documents/learning/linux_coursera/env_monitor/src/drivers/build/Debug/outDebug",
+      "cwd": "/home/tej/Documents/learning/linux_coursera/env_monitor/src/app",
+      "program": "/home/tej/Documents/learning/linux_coursera/env_monitor/src/app/build/Debug/outDebug",
       "MIMode": "gdb",
       "miDebuggerPath": "gdb",
       "setupCommands": [

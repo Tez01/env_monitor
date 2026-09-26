@@ -8,8 +8,14 @@
 
 #include "a_constants.h"
 
+enum EzMessageField{
+    BOF = 0,
+    DEVICE_ID,
+    CMD_TYPE,
+    DATA_BYTE_1
+};
+
 struct EzMessage{
-    std::uint16_t command_num_;
     std::array<std::uint8_t, EZ_MAX_PAYLOAD_LEN> payload_;
     std::size_t payload_len_;
 };
@@ -29,26 +35,21 @@ class EzProtocol{
 
         }
 
-        void message_sender_(const EzMessage &message){
-            std::string log_message = "Message sent: " +
-                std::to_string(message.command_num_);
-            sys_logger_.debug(log_message);
-
-            log_message = "Adding message to rx queue: " +
-                std::to_string(message.command_num_);
-            sys_logger_.debug(log_message);
-
-            rx_queue_.add(message);
-        }
 
         void send(const EzMessage &message){
             std::string log_message = "Message about to be sent: " +
-                std::to_string(message.command_num_);
+                std::to_string(message.payload_[2]);
 
             sys_logger_.debug(log_message);
 
             tx_queue_.add(message);
         }
+
+        EzMessage receive(){
+
+            return rx_queue_.get();
+        }
+
     private:   
         const SysLogger &sys_logger_;
         Transport &transport_;
@@ -58,20 +59,41 @@ class EzProtocol{
 
         std::jthread rx_thread_;
 
-        void rx_worker(){
-            while(true){
-                // wait on rx queue
-                EzMessage message = rx_queue_.get(); // This will sleep this thread if no message
+        void rx_worker()
+        {
+            constexpr std::size_t RESPONSE_SIZE{12};
 
-                // something in queue
+            std::array<std::uint8_t, RESPONSE_SIZE> buffer{};
+            std::size_t total_received{0};
 
-                std::string log_message = "Got message from rx queue: " +
-                    std::to_string(message.command_num_);
-                sys_logger_.debug(log_message);
+            while (true)
+            {
+                const std::size_t bytes_received{
+                    transport_.read(
+                        std::span<std::uint8_t>{
+                            buffer.data() + total_received,
+                            buffer.size() - total_received
+                        }
+                    )
+                };
 
-                // process it
-                message_processor_(message);
+                total_received += bytes_received;
 
+                if (total_received == RESPONSE_SIZE)
+                {
+                    // We now have ONE complete 12-byte EZ response.
+
+                    EzMessage message{};
+                    std::copy(buffer.begin(),
+                            buffer.end(),
+                            message.payload_.begin());
+
+                    message.payload_len_ = RESPONSE_SIZE;
+
+                    rx_queue_.add(message);
+
+                    total_received = 0;
+                }
             }
         }
 
@@ -83,11 +105,16 @@ class EzProtocol{
                 // something in queue
                 // send it
                 std::string log_message = "TX worker got message from queue: " +
-                std::to_string(message.command_num_);
+                std::to_string(message.payload_[CMD_TYPE]);
                 
                 sys_logger_.debug(log_message);
 
-                message_sender_(message);
+                transport_.write(message.payload_, message.payload_len_);
+
+                log_message = "Message sent: " +
+                std::to_string(message.payload_[CMD_TYPE]);
+                
+                sys_logger_.debug(log_message);
             }
         }
 

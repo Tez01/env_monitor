@@ -118,24 +118,19 @@ class SerialPort: public Transport{
 
         }
 
-        std::size_t read(std::span<std::uint8_t> buffer, std::size_t bytes_to_read) override{
-            if(bytes_to_read > buffer.size()){
-                throw std::invalid_argument{
-                    "bytes_to_read exceeds buffer size"
-                };
-            }
-            std::size_t total_read{0};
+        std::size_t read(std::span<std::uint8_t> buffer) override{
 
-            while (total_read < bytes_to_read)
+            while (true)
             {
-                const ssize_t bytes_read{::read(fd_.get(),
-                                        buffer.data() + total_read,
-                                        bytes_to_read - total_read)};
-                
+                const ssize_t bytes_read{
+                    ::read(fd_.get(), buffer.data(), buffer.size())
+                };
+
                 if (bytes_read < 0)
                 {
-                    if(errno == EINTR){
-                        continue;
+                    if (errno == EINTR)
+                    {
+                        continue;  // retry ::read()
                     }
 
                     throw std::system_error{
@@ -145,16 +140,9 @@ class SerialPort: public Transport{
                     };
                 }
 
-                if (bytes_read == 0)
-                {
-                    // No data received
-                    break;
-                }
-
-                total_read += static_cast<std::size_t>(bytes_read);
+                return static_cast<std::size_t>(bytes_read);
             }
 
-            return total_read;
         }
 
         
